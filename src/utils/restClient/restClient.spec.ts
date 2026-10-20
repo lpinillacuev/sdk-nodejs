@@ -257,4 +257,50 @@ describe('RestClient', () => {
 			}
 		});
 	});
+
+	test('Should send FormData without a Content-Type header when multipart is requested', async () => {
+		fetch.mockResolvedValue(new Response(JSON.stringify({ file_id: '123', file_name: 'claim.pdf' }), { status: 201 }));
+		const form = new FormData();
+		form.append('file', new Blob(['claim'], { type: 'application/pdf' }), 'claim.pdf');
+
+		const response = await RestClient.fetch('/post-purchase/v1/claims/42/attachments', {
+			method: 'POST',
+			headers: { Authorization: 'Bearer token' },
+			body: form,
+			isMultipart: true,
+		});
+
+		expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+			method: 'POST',
+			body: form,
+			headers: expect.objectContaining({ Authorization: 'Bearer token' }),
+		}));
+		const request = fetch.mock.calls[0][1];
+		expect(request.headers).not.toHaveProperty('Content-Type');
+		expect(request.headers).toEqual(expect.objectContaining({
+			Authorization: 'Bearer token',
+			'X-Idempotency-Key': expect.any(String),
+		}));
+		expect(request.body).toBe(form);
+		expect((request.body as FormData).get('file')).toEqual(form.get('file'));
+		expect(response).toEqual(expect.objectContaining({
+			file_id: '123',
+			file_name: 'claim.pdf',
+			api_response: expect.objectContaining({ status: 201 }),
+		}));
+	});
+
+	test('Should retain JSON Content-Type and serialized body by default', async () => {
+		fetch.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+		const body = JSON.stringify({ message: 'hello' });
+
+		const response = await RestClient.fetch('/test-json', { method: 'POST', body });
+
+		expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+			method: 'POST',
+			body,
+			headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+		}));
+		expect(response).toEqual(expect.objectContaining({ success: true }));
+	});
 });

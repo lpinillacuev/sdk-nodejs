@@ -19,6 +19,10 @@ interface RestClientConfig extends Options {
 	queryParams?: Record<string, string | number>;
 	/** Number of retry attempts for HTTP 5xx errors (default: {@link AppConfig.DEFAULT_RETRIES}). */
 	retries?: number;
+	/** Send a FormData body without setting Content-Type; fetch supplies the boundary. */
+	isMultipart?: boolean;
+	/** Return successful non-JSON content without parsing it as JSON. */
+	responseType?: 'arrayBuffer' | 'text';
 }
 
 function headersToRecord(headers: Headers): Record<string, string[]> {
@@ -170,6 +174,8 @@ class RestClient {
 			expandResponseNodes,
 			cardValidation,
 			testToken,
+			isMultipart = false,
+			responseType,
 			...customConfig
 		} = config || {};
 
@@ -179,7 +185,7 @@ class RestClient {
 		const url = RestClient.appendQueryParamsToUrl(`${AppConfig.BASE_URL}${endpoint}`, queryParams);
 		customConfig.headers = {
 			...customConfig.headers,
-			[AppConfig.Headers.CONTENT_TYPE]: 'application/json',
+			...(isMultipart ? {} : { [AppConfig.Headers.CONTENT_TYPE]: 'application/json' }),
 			[AppConfig.Headers.PRODUCT_ID]: AppConfig.PRODUCT_ID,
 			[AppConfig.Headers.TRACKING_ID]: AppConfig.getTrackingId(),
 			[AppConfig.Headers.USER_AGENT]: AppConfig.getUserAgent(),
@@ -230,6 +236,13 @@ class RestClient {
 					headers: headersToRecord(response.headers),
 				}
 			} as T;
+		}
+
+		if (response.ok && responseType === 'arrayBuffer') {
+			return await response.arrayBuffer() as T;
+		}
+		if (response.ok && responseType === 'text') {
+			return await response.text() as T;
 		}
 
 		const body = await response.json().catch(() => ({})) as Record<string, unknown>;
