@@ -25,6 +25,8 @@ export { Customer } from './clients/customer';
 export { AdvancedPayment } from './clients/advancedPayment';
 /** Chargeback client — retrieves and searches payment dispute records. */
 export { Chargeback } from './clients/chargeback';
+/** Claim client — attaches files to post-purchase claims. */
+export { Claim } from './clients/claim';
 /** Disbursement-refund client — manages refunds for split-payment disbursements. */
 export { DisbursementRefund } from './clients/disbursementRefund';
 /** Invoice client — retrieves and searches subscription-generated invoices. */
@@ -53,6 +55,10 @@ export { MerchantOrder } from './clients/merchantOrder';
 export { User } from './clients/user';
 /** Order client — creates, processes, captures, cancels, and refunds orders (v2 API). */
 export { Order } from './clients/order';
+/** QR integrator client — creates or updates integrator callback configuration. */
+export { QRIntegrator } from './clients/qrIntegrator';
+/** Store client — retrieves a store by ID. */
+export { Store } from './clients/store';
 
 export {
 	MercadoPagoError,
